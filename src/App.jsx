@@ -13,7 +13,7 @@ import {
   ChevronRight,
   X,
   Hotel,
-  Utensils,
+ import { Utensils } from "lucide-react";
 } from "lucide-react";
 
 // -----------------------------
@@ -812,9 +812,38 @@ const CityScreen = ({ cityId, onBack }) => {
            </ul>
       </Card>
     </div>
-  ))}  {/* closes the .map() for festivals */}
-</div> {/* closes the grid wrapper for food */}
-)}      {/* closes the {tab === "food" && (...) block */}
+       ))}
+  </div>
+)}
+{tab === "food" && (
+  <div className="grid md:grid-cols-2 gap-4">
+    {(content.food || []).length === 0 && (
+      <Card className="p-6 text-center text-gray-600">
+        No food listings yet. (Sample data coming soon.)
+      </Card>
+    )}
+
+    {(content.food || []).map((f) => (
+      <Card key={f.id} className="overflow-hidden">
+        <img src={f.photos?.[0]} className="w-full h-44 object-cover" />
+        <div className="p-4 space-y-1">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold flex items-center gap-2">
+              <Utensils className="h-4 w-4" /> {f.name}
+            </h4>
+            <span className="font-medium">
+              {typeof f.ratings === "number" ? f.ratings.toFixed(1) : "N/A"}
+            </span>
+          </div>
+          <span className="text-gray-500 text-sm">{f.cuisine}</span>
+          <p className="text-sm text-gray-700">{f.notes}</p>
+        </div>
+      </Card>
+    ))}
+  </div>
+)}
+
+
 
           <div className="grid md:grid-cols-2 gap-4">
             {content.food.length === 0 && (
