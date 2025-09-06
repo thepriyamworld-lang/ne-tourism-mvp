@@ -809,12 +809,13 @@ const CityScreen = ({ cityId, onBack }) => {
                   {(CITY_INFO[cityId]?.culture?.festivals || []).map((f, i) => (
                     <li key={i}><strong>{f.name}</strong> — {f.when} · {f.notes}</li>
                         ))}
-    </ul>
-  </Card>
-</div>
-}}
+           </ul>
+      </Card>
+    </div>
+  ))}  {/* closes the .map() for festivals */}
+</div> {/* closes the grid wrapper for food */}
+)}      {/* closes the {tab === "food" && (...) block */}
 
-        {tab === "food" && (
           <div className="grid md:grid-cols-2 gap-4">
             {content.food.length === 0 && (
               <Card className="p-6 text-center text-gray-600">No food listings yet. (Sample data coming soon.)</Card>
@@ -869,26 +870,26 @@ const CityScreen = ({ cityId, onBack }) => {
                 </div>
               </Card>
             ))}
-          </div>
+           </div>
+{tab === "sightseeing" && (
+  <div className="grid md:grid-cols-2 gap-4">
+    {(content.sightseeing || []).length === 0 && (
+      <Card className="p-6 text-center text-gray-600">
+        No sightseeing spots yet.
+      </Card>
+    )}
 
-        {tab === "sightseeing" && (
-          <div className="grid md:grid-cols-2 gap-4">
-            {(content.sightseeing || []).length === 0 && (
-              <Card className="p-6 text-center text-gray-600">No sightseeing spots yet.</Card>
-            )}
-            {(content.sightseeing || []).map((s) => (
-              <Card key={s.id} className="overflow-hidden">
-                <img src={s.photos?.[0]} className="w-full h-44 object-cover" />
-                <div className="p-4 space-y-1">
-                  <h4 className="font-semibold">{s.name}</h4>
-                  <div className="text-sm text-gray-700">Timing: {s.timing} · Fee: {s.fee}</div>
-                  <p className="text-sm text-gray-600">{s.description}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-
+    {(content.sightseeing || []).map((s) => (
+      <Card key={s.id} className="overflow-hidden">
+        <img src={s.photos[0]} className="w-full h-44 object-cover" />
+        <div className="p-4 space-y-1">
+          <h4 className="font-semibold">{s.name}</h4>
+          <p className="text-sm text-gray-700">{s.notes}</p>
+        </div>
+      </Card>
+    ))}   {/* <-- make sure this line is exactly ))} */}
+  </div>
+)}        {/* closes the outer `tab === "sightseeing" && (` */}
         {tab === "pharmacies" && (
           <div className="grid md:grid-cols-2 gap-4">
             {(content.pharmacies || []).length === 0 && (
