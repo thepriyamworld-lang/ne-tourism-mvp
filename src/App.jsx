@@ -815,85 +815,55 @@ const CityScreen = ({ cityId, onBack }) => {
        ))}
   </div>
 )}
-      {/* FOOD TAB */}
-      {tab === "food" && (
-        <div className="grid md:grid-cols-2 gap-4">
-          {(content.food || []).length === 0 && (
-            <Card className="p-6 text-center text-gray-600">
-              No food listings yet. (Sample data coming soon.)
-            </Card>
-          )}
+    {/* FOOD TAB */}
+{tab === "food" && (
+  <div className="grid md:grid-cols-2 gap-4">
+    {(content.food || []).length === 0 && (
+      <Card className="p-6 text-center text-gray-600">
+        No food listings yet. (Sample data coming soon.)
+      </Card>
+    )}
 
-          {(content.food || []).map((f) => (
-            <Card key={f.id} className="overflow-hidden">
-              <img
-                src={f.photos?.[0]}
-                className="w-full h-44 object-cover"
-                alt={f.name}
-              />
-              <div className="p-4 space-y-1">
-                <h4 className="font-semibold">{f.name}</h4>
-                <p className="text-sm text-gray-700">{f.notes}</p>
-              </div>
-            </Card>
-          ))}
-        </div> {/* closes the grid wrapper for FOOD */}
-      )}       {/* closes the {tab === "food"} block */}
+    {(content.food || []).map((f) => (
+      <Card key={f.id} className="overflow-hidden">
+        <img
+          src={f.photos?.[0]}
+          className="w-full h-44 object-cover"
+          alt={f.name}
+        />
+        <div className="p-4 space-y-1">
+          <h4 className="font-semibold">{f.name}</h4>
+          <p className="text-sm text-gray-700">{f.notes}</p>
+        </div>
+      </Card>
+    ))}
+  </div>
+)}
 
-      {/* SIGHTSEEING TAB */}
-      {tab === "sightseeing" && (
-        <div className="grid md:grid-cols-2 gap-4">
-          {(content.sightseeing || []).length === 0 && (
-            <Card className="p-6 text-center text-gray-600">
-              No sightseeing spots yet.
-            </Card>
-          )}
+{/* SIGHTSEEING TAB */}
+{tab === "sightseeing" && (
+  <div className="grid md:grid-cols-2 gap-4">
+    {(content.sightseeing || []).length === 0 && (
+      <Card className="p-6 text-center text-gray-600">
+        No sightseeing spots yet.
+      </Card>
+    )}
 
-          {(content.sightseeing || []).map((s) => (
-            <Card key={s.id} className="overflow-hidden">
-              <img
-                src={s.photos?.[0]}
-                className="w-full h-44 object-cover"
-                alt={s.name}
-              />
-              <div className="p-4 space-y-1">
-                <h4 className="font-semibold">{s.name}</h4>
-                <p className="text-sm text-gray-700">{s.notes}</p>
-              </div>
-            </Card>
-          ))}
-        </div> {/* closes the grid wrapper for SIGHTSEEING */}
-      )}       {/* closes the {tab === "sightseeing"} block */}
-
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {content.food.length === 0 && (
-              <Card className="p-6 text-center text-gray-600">No food listings yet. (Sample data coming soon.)</Card>
-            )}
-            {content.food.map((f) => (
-              <Card key={f.id} className="overflow-hidden">
-                <img src={f.photos[0]} className="w-full h-44 object-cover" />
-                <div className="p-4 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold flex items-center gap-2"><Utensils className="h-4 w-4"/>{f.name}</h4>
-                    <Stars score={f.rating} />
-                  </div>
-                  <p className="text-sm text-gray-600">{f.description}</p>
-                  <div className="text-sm text-gray-700 flex items-center gap-1"><MapPin className="h-4 w-4"/>{f.location}</div>
-                  <div className="flex gap-2 pt-2">
-                    <Button className="bg-black text-white" onClick={() => setOpenItem(f)}>View</Button>
-                    <a href={`tel:${f.phone}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border">
-                      <Phone className="h-4 w-4"/>Call
-                    </a>
-                    <a href={f.maps} target="_blank" className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border">
-                      <MapPin className="h-4 w-4"/>Map
-                    </a>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+    {(content.sightseeing || []).map((s) => (
+      <Card key={s.id} className="overflow-hidden">
+        <img
+          src={s.photos?.[0]}
+          className="w-full h-44 object-cover"
+          alt={s.name}
+        />
+        <div className="p-4 space-y-1">
+          <h4 className="font-semibold">{s.name}</h4>
+          <p className="text-sm text-gray-700">{s.notes}</p>
+        </div>
+      </Card>
+    ))}
+  </div>
+)}
 
         {tab === "stay" && (
           <div className="grid md:grid-cols-2 gap-4">
