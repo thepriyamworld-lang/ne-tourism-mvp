@@ -1,462 +1,466 @@
 // src/App.jsx
 import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
+  Utensils,
+  Landmark,
+  BedDouble,
+  CalendarDays,
+  AlertTriangle,
+  Pill,
+  Bus,
   MapPin,
   Phone,
   Star,
-  Utensils,
-  Hotel,
-  Landmark,
-  ShieldCheck,
-  LifeBuoy,
-  Pill,
-  Bus,
-  CalendarDays,
 } from "lucide-react";
 
-/** =========================
- * Inline DATA (edit/expand later)
- * ========================= */
+// -----------------------------
+// SAMPLE CONTENT (MVP data)
+// Expand/replace with real data or move to /src/content.ts later
+// -----------------------------
 const CONTENT = {
-  meta: { cityName: "Your City", subtitle: "North-East Explorer — MVP" },
-
   food: [
     {
-      id: "f-1",
+      id: "food-1",
       name: "Spice Bazaar",
-      notes: "Authentic local cuisine with vegetarian options.",
+      description: "Authentic local cuisine with vegetarian options.",
       rating: 4.5,
-      location: "Main Market",
-      phone: "+91-00000-00000",
-      photos: [],
+      address: "Main Market",
+      phone: "+91-000000-00000",
+      photos: [
+        "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop",
+      ],
     },
     {
-      id: "f-2",
+      id: "food-2",
       name: "Tea & Trails",
-      notes: "Scenic views, great momos and tea.",
+      description: "Scenic views, great momos and tea.",
       rating: 4.2,
-      location: "Hillside Road",
-      phone: "+91-11111-11111",
-      photos: [],
+      address: "Hillside Road",
+      phone: "+91-111111-11111",
+      photos: [
+        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop",
+      ],
     },
   ],
-
   sightseeing: [
     {
       id: "s-1",
-      name: "Sky View Point",
-      notes: "Best sunrise spot.",
-      rating: 4.7,
-      location: "East Ridge",
-      phone: "",
-      photos: [],
+      name: "Cloud Peak Viewpoint",
+      notes: "Best at sunrise. Carry warm clothing.",
+      photos: [
+        "https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1200&auto=format&fit=crop",
+      ],
     },
     {
       id: "s-2",
-      name: "Old Fort",
-      notes: "Historic landmark and museum.",
-      rating: 4.4,
-      location: "Fort Road",
-      phone: "",
-      photos: [],
+      name: "Heritage Bamboo Park",
+      notes: "Local crafts & weekend folk shows.",
+      photos: [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop",
+      ],
     },
   ],
-
   stay: [
     {
-      id: "st-1",
-      name: "Pine Resort",
-      notes: "Cozy rooms, mountain view.",
-      rating: 4.3,
-      location: "Valley Side",
-      phone: "+91-22222-22222",
-      roomType: "Deluxe",
-      pricePerNight: 2800,
-      photos: [],
+      id: "stay-1",
+      name: "Hillside Homestay",
+      description: "Cozy wooden rooms with breakfast.",
+      rating: 4.4,
+      roomType: "Double",
+      pricePerNight: 2200,
+      phone: "+91-999999-99999",
+      photos: [
+        "https://images.unsplash.com/photo-1505691723518-36a5ac3b2d4d?q=80&w=1200&auto=format&fit=crop",
+      ],
     },
   ],
-
-  culture: {
-    festivals: [
-      { name: "Harvest Fest", when: "March", notes: "Parades and folk music." },
-      { name: "River Lights", when: "October", notes: "Lanterns and food stalls." },
-    ],
-  },
-
-  emergencies: {
-    police: { name: "City Police", phone: "+91-100" },
-    helpdesk: { name: "Tourist Helpdesk", phone: "+91-1800-123-000" },
-  },
-
-  pharmacies: [
-    { id: "ph-1", name: "Care Pharmacy", location: "High Street", phone: "+91-33333-33333", notes: "24/7" },
+  festivals: [
+    {
+      id: "fest-1",
+      name: "Spring Rhythms",
+      when: "Mar 14–16",
+      notes: "Dance, bamboo crafts, local cuisine.",
+    },
   ],
-
+  emergency: {
+    police: { name: "City Police", phone: "100" },
+    helpdesk: { name: "Tourist Helpdesk", phone: "1800-000-111" },
+  },
+  pharmacies: [
+    {
+      id: "ph-1",
+      name: "High Street Pharmacy",
+      address: "High Street",
+      phone: "+91-222222-22222",
+      photos: [
+        "https://images.unsplash.com/photo-1586015555751-63bb77f432d7?q=80&w=1200&auto=format&fit=crop",
+      ],
+    },
+  ],
   transport: [
-    { id: "t-1", name: "Central Bus Stand", location: "Civic Center", phone: "", notes: "Intercity buses hourly." },
+    {
+      id: "t-1",
+      name: "City Bus Stand",
+      notes: "Buses every 30 mins. Last bus 8:30 PM.",
+      photos: [
+        "https://images.unsplash.com/photo-1491555103944-7c647fd857e6?q=80&w=1200&auto=format&fit=crop",
+      ],
+    },
   ],
 };
 
-/** =========================
- * Helpers (UI)
- * ========================= */
-function Stars({ score = 0 }) {
-  const s = Math.max(0, Math.min(5, Number(score) || 0));
-  const full = Math.floor(s);
-  const half = s - full >= 0.5;
+// -----------------------------
+// SMALL UI HELPERS
+// -----------------------------
+const tabs = [
+  { key: "food", label: "Food", icon: Utensils },
+  { key: "sightseeing", label: "Sightseeing", icon: Landmark },
+  { key: "stay", label: "Stay", icon: BedDouble },
+  { key: "festivals", label: "Festivals", icon: CalendarDays },
+  { key: "emergency", label: "Emergency", icon: AlertTriangle },
+  { key: "pharmacies", label: "Pharmacies", icon: Pill },
+  { key: "transport", label: "Transport", icon: Bus },
+];
+
+function Rating({ value }) {
+  const full = Math.floor(value || 0);
+  const stars = Array.from({ length: 5 }, (_, i) => i < full);
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          className={`h-4 w-4 ${
-            i < full || (i === full && half) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-        />
+    <div className="flex items-center gap-1 text-yellow-500">
+      {stars.map((on, i) => (
+        <Star key={i} size={16} className={on ? "fill-yellow-500" : ""} />
       ))}
-      <span className="text-xs text-gray-600 ml-1">{s.toFixed(1)}</span>
+      <span className="ml-1 text-xs text-gray-600">{value?.toFixed(1)}</span>
     </div>
   );
 }
 
-function Card({ children, className = "" }) {
-  return <div className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 ${className}`}>{children}</div>;
-}
-
-function ImgOrPlaceholder({ src, alt, label }) {
-  return src ? (
-    <img src={src} alt={alt || label} className="w-full h-44 object-cover" />
-  ) : (
-    <div className="w-full h-44 bg-gray-100 flex items-center justify-center text-xs text-gray-500">{label || "Photo"}</div>
+function Card({ children }) {
+  return (
+    <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 overflow-hidden">
+      {children}
+    </div>
   );
 }
 
-function INR(n) {
-  const v = Number(n || 0);
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
+function Img({ src, alt }) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-40 w-full object-cover"
+      loading="lazy"
+      decoding="async"
+    />
+  );
 }
 
-/** =========================
- * Section components
- * ========================= */
-function FoodGrid({ items }) {
-  const list = items || [];
+const fade = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+  transition: { duration: 0.2 },
+};
+
+// -----------------------------
+// MAIN APP
+// -----------------------------
+export default function App() {
+  const [tab, setTab] = useState("food");
+
+  const current = useMemo(() => {
+    switch (tab) {
+      case "food":
+        return CONTENT.food || [];
+      case "sightseeing":
+        return CONTENT.sightseeing || [];
+      case "stay":
+        return CONTENT.stay || [];
+      case "festivals":
+        return CONTENT.festivals || [];
+      case "pharmacies":
+        return CONTENT.pharmacies || [];
+      case "transport":
+        return CONTENT.transport || [];
+      case "emergency":
+        return CONTENT.emergency || {};
+      default:
+        return [];
+    }
+  }, [tab]);
+
   return (
-    <div className="grid md:grid-cols-2 gap-4">
-      {list.length === 0 && (
-        <Card>
-          <div className="p-6 text-center text-gray-600">No food listings yet.</div>
-        </Card>
-      )}
-      {list.map((f) => (
-        <Card key={f.id}>
-          <ImgOrPlaceholder src={f.photos?.[0]} alt={f.name} label="Food" />
-          <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold">{f.name}</h4>
-              <Stars score={f.rating} />
-            </div>
-            <p className="text-sm text-gray-700">{f.notes}</p>
-            <div className="pt-1 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {f.location || "—"}
-              </span>
-              {f.phone ? (
-                <a href={`tel:${f.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                  <Phone className="h-4 w-4" />
-                  {f.phone}
-                </a>
-              ) : null}
-            </div>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-black text-white">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="font-bold text-xl leading-tight">North-East Explorer</h1>
+            <p className="text-xs/5 text-white/70">Your City — MVP</p>
           </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
 
-function SightseeingGrid({ items }) {
-  const list = items || [];
-  return (
-    <div className="grid md:grid-cols-2 gap-4">
-      {list.length === 0 && (
-        <Card>
-          <div className="p-6 text-center text-gray-600">No sightseeing spots yet.</div>
-        </Card>
-      )}
-      {list.map((s) => (
-        <Card key={s.id}>
-          <ImgOrPlaceholder src={s.photos?.[0]} alt={s.name} label="Sightseeing" />
-          <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold">{s.name}</h4>
-              <Stars score={s.rating} />
-            </div>
-            <p className="text-sm text-gray-700">{s.notes}</p>
-            <div className="pt-1 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {s.location || "—"}
-              </span>
-              {s.phone ? (
-                <a href={`tel:${s.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                  <Phone className="h-4 w-4" />
-                  {s.phone}
-                </a>
-              ) : null}
-            </div>
+          {/* Tab Nav (desktop) */}
+          <nav className="hidden md:flex items-center gap-2">
+            {tabs.map(({ key, label, icon: Icon }) => {
+              const active = tab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm transition
+                    ${active ? "bg-white text-black" : "bg-white/10 hover:bg-white/20"}
+                  `}
+                >
+                  <Icon size={16} />
+                  {label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Nav (mobile) */}
+        <div className="md:hidden border-t border-white/10">
+          <div className="mx-auto max-w-6xl px-2 py-2 flex gap-2 overflow-x-auto no-scrollbar">
+            {tabs.map(({ key, label, icon: Icon }) => {
+              const active = tab === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setTab(key)}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs transition
+                    ${active ? "bg-white text-black" : "bg-white/10 hover:bg-white/20 text-white"}
+                  `}
+                >
+                  <Icon size={14} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
-        </Card>
-      ))}
+        </div>
+      </header>
+
+      {/* Body */}
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <AnimatePresence mode="wait">
+          {/* FOOD */}
+          {tab === "food" && (
+            <motion.section key="food" {...fade}>
+              <SectionTitle icon={Utensils} title="Food & Cafés" />
+              <IfEmpty items={current} empty="No food listings yet. (Sample data coming soon.)" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((f) => (
+                  <Card key={f.id}>
+                    {f.photos?.[0] && <Img src={f.photos[0]} alt={f.name} />}
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold text-base">{f.name}</h3>
+                        <Rating value={f.rating} />
+                      </div>
+                      <p className="text-sm text-gray-600">{f.description}</p>
+                      <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <Line icon={MapPin} text={f.address} />
+                        <Line icon={Phone} text={f.phone} />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* SIGHTSEEING */}
+          {tab === "sightseeing" && (
+            <motion.section key="sightseeing" {...fade}>
+              <SectionTitle icon={Landmark} title="Sightseeing" />
+              <IfEmpty
+                items={current}
+                empty="No sightseeing spots yet. (Sample data coming soon.)"
+              />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((s) => (
+                  <Card key={s.id}>
+                    {s.photos?.[0] && <Img src={s.photos[0]} alt={s.name} />}
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold">{s.name}</h3>
+                      <p className="text-sm text-gray-600">{s.notes}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* STAY */}
+          {tab === "stay" && (
+            <motion.section key="stay" {...fade}>
+              <SectionTitle icon={BedDouble} title="Stays & Homestays" />
+              <IfEmpty items={current} empty="No stays yet. (Sample data coming soon.)" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((s) => (
+                  <Card key={s.id}>
+                    {s.photos?.[0] && <Img src={s.photos[0]} alt={s.name} />}
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-semibold">{s.name}</h3>
+                        <Rating value={s.rating} />
+                      </div>
+                      <p className="text-sm text-gray-600">{s.description}</p>
+                      <div className="flex items-center gap-4 text-sm pt-1">
+                        <span className="text-gray-700">
+                          <span className="text-gray-500">Room:</span> {s.roomType}
+                        </span>
+                        <span className="text-gray-700">
+                          <span className="text-gray-500">₹</span>
+                          {formatPrice(s.pricePerNight)}
+                          <span className="text-gray-500"> /night</span>
+                        </span>
+                      </div>
+                      <div className="pt-2">
+                        <Line icon={Phone} text={s.phone} />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* FESTIVALS */}
+          {tab === "festivals" && (
+            <motion.section key="festivals" {...fade}>
+              <SectionTitle icon={CalendarDays} title="Festivals & Culture" />
+              <IfEmpty items={current} empty="No festivals yet. (Sample data coming soon.)" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((f) => (
+                  <Card key={f.id}>
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold">{f.name}</h3>
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">When:</span> {f.when}
+                      </p>
+                      <p className="text-sm text-gray-600">{f.notes}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* EMERGENCY */}
+          {tab === "emergency" && (
+            <motion.section key="emergency" {...fade}>
+              <SectionTitle icon={AlertTriangle} title="Emergency Contacts" />
+              <div className="grid md:grid-cols-2 gap-4">
+                <Card>
+                  <div className="p-4 space-y-1">
+                    <h3 className="font-semibold">Police</h3>
+                    <Line icon={Phone} text={CONTENT.emergency?.police?.phone || "—"} />
+                    <p className="text-xs text-gray-600">
+                      {CONTENT.emergency?.police?.name || ""}
+                    </p>
+                  </div>
+                </Card>
+                <Card>
+                  <div className="p-4 space-y-1">
+                    <h3 className="font-semibold">Tourist Helpdesk</h3>
+                    <Line icon={Phone} text={CONTENT.emergency?.helpdesk?.phone || "—"} />
+                    <p className="text-xs text-gray-600">
+                      {CONTENT.emergency?.helpdesk?.name || ""}
+                    </p>
+                  </div>
+                </Card>
+              </div>
+            </motion.section>
+          )}
+
+          {/* PHARMACIES */}
+          {tab === "pharmacies" && (
+            <motion.section key="pharmacies" {...fade}>
+              <SectionTitle icon={Pill} title="Pharmacies" />
+              <IfEmpty items={current} empty="No pharmacies yet. (Sample data coming soon.)" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((p) => (
+                  <Card key={p.id}>
+                    {p.photos?.[0] && <Img src={p.photos[0]} alt={p.name} />}
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold">{p.name}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <Line icon={MapPin} text={p.address} />
+                        <Line icon={Phone} text={p.phone} />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+
+          {/* TRANSPORT */}
+          {tab === "transport" && (
+            <motion.section key="transport" {...fade}>
+              <SectionTitle icon={Bus} title="Transport" />
+              <IfEmpty items={current} empty="No transport info yet. (Sample data coming soon.)" />
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {current.map((t) => (
+                  <Card key={t.id}>
+                    {t.photos?.[0] && <Img src={t.photos[0]} alt={t.name} />}
+                    <div className="p-4 space-y-2">
+                      <h3 className="font-semibold">{t.name}</h3>
+                      <p className="text-sm text-gray-600">{t.notes}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
+
+        {/* MVP hint */}
+        <p className="mt-10 text-xs text-gray-500">
+          MVP demo — expand the arrays in this file or move them to{" "}
+          <code className="rounded bg-gray-200 px-1 py-0.5">/src/content.ts</code> later.
+        </p>
+      </main>
     </div>
   );
 }
 
-function StayGrid({ items }) {
-  const list = items || [];
+// -----------------------------
+// REUSABLE BITS
+// -----------------------------
+function SectionTitle({ icon: Icon, title }) {
   return (
-    <div className="grid md:grid-cols-2 gap-4">
-      {list.length === 0 && (
-        <Card>
-          <div className="p-6 text-center text-gray-600">No stays yet.</div>
-        </Card>
-      )}
-      {list.map((h) => (
-        <Card key={h.id}>
-          <ImgOrPlaceholder src={h.photos?.[0]} alt={h.name} label="Stay" />
-          <div className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold">{h.name}</h4>
-              <Stars score={h.rating} />
-            </div>
-            <p className="text-sm text-gray-700">{h.notes}</p>
-            <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <Hotel className="h-4 w-4" />
-                {h.roomType || "—"}
-              </span>
-              <span className="inline-flex items-center gap-1 justify-end">
-                <span className="font-medium">{INR(h.pricePerNight || 0)}</span>
-                <span>/night</span>
-              </span>
-            </div>
-            <div className="pt-1 flex flex-wrap items-center gap-4 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {h.location || "—"}
-              </span>
-              {h.phone ? (
-                <a href={`tel:${h.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                  <Phone className="h-4 w-4" />
-                  {h.phone}
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </Card>
-      ))}
+    <div className="mb-4 flex items-center gap-2">
+      <Icon size={18} className="text-black" />
+      <h2 className="font-semibold">{title}</h2>
     </div>
   );
 }
 
-function Festivals({ items }) {
-  const list = items || [];
+function Line({ icon: Icon, text }) {
+  if (!text) return null;
+  return (
+    <div className="flex items-center gap-2 text-gray-700">
+      <Icon size={16} className="text-gray-500" />
+      <span className="truncate">{text}</span>
+    </div>
+  );
+}
+
+function IfEmpty({ items, empty }) {
+  const isEmpty = Array.isArray(items) ? items.length === 0 : !items || Object.keys(items).length === 0;
+  if (!isEmpty) return null;
   return (
     <Card>
-      <div className="p-4">
-        <h4 className="font-semibold mb-2 inline-flex items-center gap-2">
-          <CalendarDays className="h-4 w-4" />
-          Festivals
-        </h4>
-        {list.length === 0 ? (
-          <p className="text-sm text-gray-600">No festivals listed.</p>
-        ) : (
-          <ul className="text-sm text-gray-700 space-y-1">
-            {list.map((f, i) => (
-              <li key={i}>
-                <strong className="mr-1">{f.name}</strong> — {f.when}
-                {f.notes ? <span className="text-gray-600"> · {f.notes}</span> : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <div className="p-6 text-center text-gray-600">{empty}</div>
     </Card>
   );
 }
 
-function Emergencies({ police, helpdesk }) {
-  return (
-    <div className="grid md:grid-cols-2 gap-4">
-      <Card>
-        <div className="p-4 space-y-1">
-          <h4 className="font-semibold inline-flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" /> Police
-          </h4>
-          <div className="text-sm text-gray-700">{police?.name || "—"}</div>
-          {police?.phone ? (
-            <a href={`tel:${police.phone}`} className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
-              <Phone className="h-4 w-4" /> {police.phone}
-            </a>
-          ) : (
-            <div className="text-sm text-gray-500">No phone</div>
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <div className="p-4 space-y-1">
-          <h4 className="font-semibold inline-flex items-center gap-2">
-            <LifeBuoy className="h-4 w-4" /> Helpdesk
-          </h4>
-          <div className="text-sm text-gray-700">{helpdesk?.name || "—"}</div>
-          {helpdesk?.phone ? (
-            <a href={`tel:${helpdesk.phone}`} className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1">
-              <Phone className="h-4 w-4" /> {helpdesk.phone}
-            </a>
-          ) : (
-            <div className="text-sm text-gray-500">No phone</div>
-          )}
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-function Pharmacies({ items }) {
-  const list = items || [];
-  return (
-    <div className="grid md:grid-cols-2 gap-4">
-      {list.length === 0 && (
-        <Card>
-          <div className="p-6 text-center text-gray-600">No pharmacies listed.</div>
-        </Card>
-      )}
-      {list.map((p) => (
-        <Card key={p.id}>
-          <div className="p-4 space-y-2">
-            <h4 className="font-semibold inline-flex items-center gap-2">
-              <Pill className="h-4 w-4" />
-              {p.name}
-            </h4>
-            <p className="text-sm text-gray-700">{p.notes}</p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {p.location || "—"}
-              </span>
-              {p.phone ? (
-                <a href={`tel:${p.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                  <Phone className="h-4 w-4" />
-                  {p.phone}
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-function Transport({ items }) {
-  const list = items || [];
-  return (
-    <div className="grid md:grid-cols-2 gap-4">
-      {list.length === 0 && (
-        <Card>
-          <div className="p-6 text-center text-gray-600">No transport entries.</div>
-        </Card>
-      )}
-      {list.map((t) => (
-        <Card key={t.id}>
-          <div className="p-4 space-y-2">
-            <h4 className="font-semibold inline-flex items-center gap-2">
-              <Bus className="h-4 w-4" />
-              {t.name}
-            </h4>
-            <p className="text-sm text-gray-700">{t.notes}</p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {t.location || "—"}
-              </span>
-              {t.phone ? (
-                <a href={`tel:${t.phone}`} className="inline-flex items-center gap-1 hover:underline">
-                  <Phone className="h-4 w-4" />
-                  {t.phone}
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </Card>
-      ))}
-    </div>
-  );
-}
-
-/** =========================
- * App
- * ========================= */
-export default function App() {
-  const data = useMemo(() => CONTENT, []);
-  const [tab, setTab] = useState("food");
-
-  const tabs = [
-    { key: "food", label: "Food", icon: Utensils },
-    { key: "sightseeing", label: "Sightseeing", icon: Landmark },
-    { key: "stay", label: "Stay", icon: Hotel },
-    { key: "festivals", label: "Festivals", icon: CalendarDays },
-    { key: "emergencies", label: "Emergency", icon: ShieldCheck },
-    { key: "pharmacies", label: "Pharmacies", icon: Pill },
-    { key: "transport", label: "Transport", icon: Bus },
-  ];
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg md:text-xl font-semibold">{data.meta?.cityName || "Explorer"}</h1>
-            <p className="text-xs text-gray-600">{data.meta?.subtitle || "MVP"}</p>
-          </div>
-          <nav className="flex flex-wrap gap-1">
-            {tabs.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
-                  tab === key
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      {/* Main */}
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {tab === "food" && <FoodGrid items={data.food} />}
-        {tab === "sightseeing" && <SightseeingGrid items={data.sightseeing} />}
-        {tab === "stay" && <StayGrid items={data.stay} />}
-        {tab === "festivals" && <Festivals items={data.culture?.festivals} />}
-        {tab === "emergencies" && (
-          <Emergencies police={data.emergencies?.police} helpdesk={data.emergencies?.helpdesk} />
-        )}
-        {tab === "pharmacies" && <Pharmacies items={data.pharmacies} />}
-        {tab === "transport" && <Transport items={data.transport} />}
-      </main>
-
-      <footer className="max-w-6xl mx-auto px-4 pb-10 pt-4 text-xs text-gray-500">
-        MVP demo — expand the arrays in this file (CONTENT) or move them to a separate `src/content.js` later.
-      </footer>
-    </div>
-  );
+function formatPrice(n) {
+  if (typeof n !== "number") return "—";
+  return n.toLocaleString("en-IN");
 }
