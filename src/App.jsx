@@ -13,9 +13,93 @@ import {
   Bus,
   CalendarDays,
 } from "lucide-react";
-import { CONTENT } from "./content";
 
-// ---------- Helpers ----------
+/** =========================
+ * Inline DATA (edit/expand later)
+ * ========================= */
+const CONTENT = {
+  meta: { cityName: "Your City", subtitle: "North-East Explorer — MVP" },
+
+  food: [
+    {
+      id: "f-1",
+      name: "Spice Bazaar",
+      notes: "Authentic local cuisine with vegetarian options.",
+      rating: 4.5,
+      location: "Main Market",
+      phone: "+91-00000-00000",
+      photos: [],
+    },
+    {
+      id: "f-2",
+      name: "Tea & Trails",
+      notes: "Scenic views, great momos and tea.",
+      rating: 4.2,
+      location: "Hillside Road",
+      phone: "+91-11111-11111",
+      photos: [],
+    },
+  ],
+
+  sightseeing: [
+    {
+      id: "s-1",
+      name: "Sky View Point",
+      notes: "Best sunrise spot.",
+      rating: 4.7,
+      location: "East Ridge",
+      phone: "",
+      photos: [],
+    },
+    {
+      id: "s-2",
+      name: "Old Fort",
+      notes: "Historic landmark and museum.",
+      rating: 4.4,
+      location: "Fort Road",
+      phone: "",
+      photos: [],
+    },
+  ],
+
+  stay: [
+    {
+      id: "st-1",
+      name: "Pine Resort",
+      notes: "Cozy rooms, mountain view.",
+      rating: 4.3,
+      location: "Valley Side",
+      phone: "+91-22222-22222",
+      roomType: "Deluxe",
+      pricePerNight: 2800,
+      photos: [],
+    },
+  ],
+
+  culture: {
+    festivals: [
+      { name: "Harvest Fest", when: "March", notes: "Parades and folk music." },
+      { name: "River Lights", when: "October", notes: "Lanterns and food stalls." },
+    ],
+  },
+
+  emergencies: {
+    police: { name: "City Police", phone: "+91-100" },
+    helpdesk: { name: "Tourist Helpdesk", phone: "+91-1800-123-000" },
+  },
+
+  pharmacies: [
+    { id: "ph-1", name: "Care Pharmacy", location: "High Street", phone: "+91-33333-33333", notes: "24/7" },
+  ],
+
+  transport: [
+    { id: "t-1", name: "Central Bus Stand", location: "Civic Center", phone: "", notes: "Intercity buses hourly." },
+  ],
+};
+
+/** =========================
+ * Helpers (UI)
+ * ========================= */
 function Stars({ score = 0 }) {
   const s = Math.max(0, Math.min(5, Number(score) || 0));
   const full = Math.floor(s);
@@ -36,20 +120,14 @@ function Stars({ score = 0 }) {
 }
 
 function Card({ children, className = "" }) {
-  return (
-    <div className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 ${className}`}>{children}</div>;
 }
 
 function ImgOrPlaceholder({ src, alt, label }) {
   return src ? (
     <img src={src} alt={alt || label} className="w-full h-44 object-cover" />
   ) : (
-    <div className="w-full h-44 bg-gray-100 flex items-center justify-center text-xs text-gray-500">
-      {label || "Photo"}
-    </div>
+    <div className="w-full h-44 bg-gray-100 flex items-center justify-center text-xs text-gray-500">{label || "Photo"}</div>
   );
 }
 
@@ -58,7 +136,9 @@ function INR(n) {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(v);
 }
 
-// ---------- Section renderers ----------
+/** =========================
+ * Section components
+ * ========================= */
 function FoodGrid({ items }) {
   const list = items || [];
   return (
@@ -316,7 +396,9 @@ function Transport({ items }) {
   );
 }
 
-// ---------- App ----------
+/** =========================
+ * App
+ * ========================= */
 export default function App() {
   const data = useMemo(() => CONTENT, []);
   const [tab, setTab] = useState("food");
@@ -333,6 +415,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
@@ -358,6 +441,7 @@ export default function App() {
         </div>
       </header>
 
+      {/* Main */}
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {tab === "food" && <FoodGrid items={data.food} />}
         {tab === "sightseeing" && <SightseeingGrid items={data.sightseeing} />}
@@ -371,7 +455,7 @@ export default function App() {
       </main>
 
       <footer className="max-w-6xl mx-auto px-4 pb-10 pt-4 text-xs text-gray-500">
-        MVP demo — expand the arrays in <code>src/content.js</code>. UI will scale without code changes.
+        MVP demo — expand the arrays in this file (CONTENT) or move them to a separate `src/content.js` later.
       </footer>
     </div>
   );
