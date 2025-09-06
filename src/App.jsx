@@ -808,14 +808,11 @@ const CityScreen = ({ cityId, onBack }) => {
                 <ul className="text-sm text-gray-700 space-y-1">
                   {(CITY_INFO[cityId]?.culture?.festivals || []).map((f, i) => (
                     <li key={i}><strong>{f.name}</strong> — {f.when} · {f.notes}</li>
-                  ))}
-                </ul>
-              </Card>
-            </div
-              </div>
-            </Card>
-          </>
-        )}
+                        ))}
+    </ul>
+  </Card>
+</div>
+}}
 
         {tab === "food" && (
           <div className="grid md:grid-cols-2 gap-4">
