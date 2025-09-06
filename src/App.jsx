@@ -813,8 +813,7 @@ const CityScreen = ({ cityId, onBack }) => {
       </Card>
     </div>
        ))}
-  </div>
-)}
+  )}
     {/* FOOD TAB */}
 {tab === "food" && (
   <div className="grid md:grid-cols-2 gap-4">
