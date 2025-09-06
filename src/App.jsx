@@ -13,7 +13,7 @@ import {
   ChevronRight,
   X,
   Hotel,
- import { Utensils } from "lucide-react";
+  Utensils
 } from "lucide-react";
 
 // -----------------------------
