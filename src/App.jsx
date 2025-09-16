@@ -113,18 +113,51 @@ function buildCityData(c) {
   ];
 
   // --- Food (3) ---
-  const food = [
-    { id: `${c.slug}-food-1`, type: "food", title: `${c.name} Kitchen & Grill`, description: `Local thalis, smoked meats, fresh greens. Vegetarian options available.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.3,
-      reviews: { count: 78, breakdown: { 5:42, 4:22, 3:10, 2:3, 1:1 } },
-      fields: { priceForTwo: 800, cuisine: ["Local","North‑Indian"], vegFriendly: true }, location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "+91-90909-00000", website: "#" }, tags: ["Local","Family"] },
-    { id: `${c.slug}-food-2`, type: "food", title: `${c.name} Tea Lounge`, description: `Estate teas, light snacks, valley views.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.5,
-      reviews: { count: 55, breakdown: { 5:35, 4:15, 3:4, 2:1, 1:0 } },
-      fields: { priceForTwo: 500, cuisine: ["Cafe"], vegFriendly: true }, location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Cafe","Tea"] },
-    { id: `${c.slug}-food-3`, type: "food", title: `${c.name} Night Market", description: "Street snacks and local produce in the evening.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.0,
-      reviews: { count: 120, breakdown: { 5:60, 4:35, 3:18, 2:5, 1:2 } },
-      fields: { priceForTwo: 400, cuisine: ["Street Food"], vegFriendly: true }, location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Street","Budget"] },
-  ];
-
+// --- Food (3) ---
+const food = [
+  {
+    id: `${c.slug}-food-1`,
+    type: "food",
+    title: `${c.name} Kitchen & Grill`,
+    description: `Local thalis, smoked meats, fresh greens. Vegetarian options available.`,
+    thumb: mkThumb(),
+    gallery: mkGallery(),
+    rating: 4.3,
+    reviews: { count: 78, breakdown: { 5: 42, 4: 22, 3: 10, 2: 3, 1: 1 } },
+    fields: { priceForTwo: 800, cuisine: ["Local", "North-Indian"], vegFriendly: true },
+    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+    contact: { phone: "+91-90909-00000", website: "#" },
+    tags: ["Local", "Family"],
+  },
+  {
+    id: `${c.slug}-food-2`,
+    type: "food",
+    title: `${c.name} Tea Lounge`,
+    description: `Estate teas, light snacks, valley views.`,
+    thumb: mkThumb(),
+    gallery: mkGallery(),
+    rating: 4.5,
+    reviews: { count: 55, breakdown: { 5: 35, 4: 15, 3: 4, 2: 1, 1: 0 } },
+    fields: { priceForTwo: 500, cuisine: ["Cafe"], vegFriendly: true },
+    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+    contact: { phone: "", website: "#" },
+    tags: ["Cafe", "Tea"],
+  },
+  {
+    id: `${c.slug}-food-3`,
+    type: "food",
+    title: `${c.name} Night Market`,
+    description: "Street snacks and local produce in the evening.",
+    thumb: mkThumb(),
+    gallery: mkGallery(),
+    rating: 4.0,
+    reviews: { count: 120, breakdown: { 5: 60, 4: 35, 3: 18, 2: 5, 1: 2 } },
+    fields: { priceForTwo: 400, cuisine: ["Street Food"], vegFriendly: true },
+    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+    contact: { phone: "", website: "#" },
+    tags: ["Street", "Budget"],
+  },
+];
   // --- Transport (2) ---
   const transport = [
     { id: `${c.slug}-tx-1`, type: "transport", title: "Bus Stand", description: "Intercity and local buses.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.0,
