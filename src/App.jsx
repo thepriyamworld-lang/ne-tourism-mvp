@@ -2,42 +2,49 @@ import React, { useEffect, useMemo, useState } from "react";
 import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from "react-router-dom";
 
 /**
- * NE Tourism MVP — Single-file App.jsx (CTO++ / QA hardened / content-rich)
- * -------------------------------------------------------
- * ✅ Modern Home (hero carousel, Packages, Best Places)
- * ✅ City page with sticky tabs, search, robust cards, gallery, reviews
- * ✅ Save (favorites, localStorage), Share/Copy, Open in Maps, Call/Website
- * ✅ Safe image component with multi-step fallback (no infinite onError loops)
- * ✅ Gentle filters/sort by rating/price where available
- * ✅ Zero external UI deps (Tailwind-only). Router only.
+ * NE Tourism MVP — App.jsx (CTO-grade, QA hardened)
+ * - Home: Hero carousel, Featured Packages, Best Places
+ * - City: sticky tabs (Stay, Sightseeing, Food, Transport, Festivals, Pharmacy, Emergency, Notes)
+ * - Entry cards: title, description, thumb, gallery modal, rating stars, reviews block,
+ *   relevant fields per type, Open in Maps, Save (localStorage), Share/Copy, Call/Website
+ * - SafeImage: multi-step fallback (src -> /assets/cities/generic.jpg -> inline SVG placeholder)
+ * - Only dependency: react-router-dom
  *
- * How to run:
- * 1) Ensure images live in /public/assets/cities/<slug>.jpg (plus generic.jpg optional)
- * 2) Replace src/App.jsx with this file
- * 3) npm i react-router-dom
- * 4) npm run dev
+ * Paths expected:
+ *   public/assets/cities/<slug>.jpg   (hero/thumbs)
+ *   public/assets/cities/generic.jpg  (optional fallback)
  */
 
-// ---------- Utilities ----------
+// ---------- utils ----------
 const cls = (...xs) => xs.filter(Boolean).join(" ");
 const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 const fmtINR = (n) => (typeof n === "number" ? INR.format(n) : n);
 const storageKey = "ne_tourism_favs_v1";
+
 const PLACEHOLDER =
   "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNjQwJyBoZWlnaHQ9JzM2MCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCBmaWxsPSIjMTMxODI0IiB3aWR0aD0nMTAwJScgaGVpZ2h0PScxMDAlJy8+PHRleHQgeD0nNTAnIHk9JzIwJScgZmlsbD0nI2I0YmJjYycgZm9udC1zaXplPScxNSc+Tm8gaW1hZ2U8L3RleHQ+PC9zdmc+";
 
 function useLocalStorage(key, initial) {
   const [value, setValue] = useState(() => {
-    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : initial; } catch { return initial; }
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : initial;
+    } catch {
+      return initial;
+    }
   });
-  useEffect(() => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} }, [key, value]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  }, [key, value]);
   return [value, setValue];
 }
 
-// Robust image with double fallback
+// image with safe fallbacks (prevents infinite onError loops)
 function SafeImage({ src, alt = "", className = "", style }) {
   const [step, setStep] = useState(0); // 0: src, 1: generic, 2: placeholder
-  const generic = "/assets/cities/generic.jpg"; // optional in /public
+  const generic = "/assets/cities/generic.jpg";
   const pick = step === 0 ? src : step === 1 ? generic : PLACEHOLDER;
   return (
     <img
@@ -52,150 +59,229 @@ function SafeImage({ src, alt = "", className = "", style }) {
   );
 }
 
-// ---------- Cities & Sample Content ----------
-// Heavily contented sample generator: adds rich mock entries for every city so the UI looks alive.
-// Replace with real data later by hitting an API or importing JSON.
+// ---------- cities ----------
+const CITY_LIST = [
+  { name: "Ziro", state: "Arunachal Pradesh", slug: "ziro" },
+  { name: "Serchhip", state: "Mizoram", slug: "serchhip" },
+  { name: "Thenzawl", state: "Mizoram", slug: "thenzawl" },
+  { name: "Tamenglong", state: "Manipur", slug: "tamenglong" },
+  { name: "Rangpo", state: "Sikkim", slug: "rangpo" },
+  { name: "Majhitar", state: "Sikkim", slug: "majhitar" },
+  { name: "Singtam", state: "Sikkim", slug: "singtam" },
+  { name: "Pasighat", state: "Arunachal Pradesh", slug: "pasighat" },
+  { name: "Pangin", state: "Arunachal Pradesh", slug: "pangin" },
+  { name: "Senapati", state: "Manipur", slug: "senapati" },
+  { name: "Silchar", state: "Assam", slug: "silchar" },
+  { name: "Chümoukedima", state: "Nagaland", slug: "chumoukedima" },
+  { name: "Udaipur", state: "Tripura", slug: "udaipur" },
+  { name: "Digboi", state: "Assam", slug: "digboi" },
+  { name: "Sivasagar", state: "Assam", slug: "sivasagar" },
+];
 
-function minutesToHuman(m) {
-  if (!m && m !== 0) return "—";
-  const h = Math.floor(m / 60);
-  const mm = m % 60;
-  if (h && mm) return `${h}h ${mm}m`;
-  if (h) return `${h}h`;
-  return `${mm}m`;
-}
+const hero = (slug) => `/assets/cities/${slug}.jpg`;
 
+// build mock-rich data (replace later with API/JSON if needed)
 function buildCityData(c) {
   const mapsQ = encodeURIComponent(`${c.name}, ${c.state}`);
   const baseMaps = `https://www.google.com/maps/search/?api=1&query=${mapsQ}`;
-  const hero = cityHero(c.slug);
-  const mkThumb = () => hero; // swap to entry-specific later
-  const mkGallery = () => [hero, hero];
+  const thumb = hero(c.slug);
+  const gallery = [thumb, thumb];
 
-  // --- Stays (4 rich examples) ---
+  // stays
   const stays = [
-    { id: `${c.slug}-stay-1`, type: "stay", title: `${c.name} Riverside Lodge`, description: `Cozy rooms by the river with balcony views and local cuisine.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.5,
-      reviews: { count: 128, breakdown: { 5:85, 4:30, 3:10, 2:2, 1:1 } },
-      fields: { roomType: "Deluxe / Family", priceFrom: 2400, amenities: ["Wi‑Fi","Breakfast","Parking"], checkIn: "1:00 PM", checkOut: "11:00 AM" },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "+91-98765-43210", website: "#" }, tags: ["Scenic","Family","Budget"] },
-    { id: `${c.slug}-stay-2`, type: "stay", title: `${c.name} Hilltop Homestay`, description: `Wooden cottages amidst pine groves; great sunrise points.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.7,
-      reviews: { count: 96, breakdown: { 5:70, 4:20, 3:5, 2:1, 1:0 } },
-      fields: { roomType: "Cottage", priceFrom: 3200, amenities: ["Bonfire","Local Meals","Guide"], checkIn: "12:00 PM", checkOut: "10:00 AM" },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "+91-99870-11223", website: "#" }, tags: ["Couples","Sunrise","Cottages"] },
-    { id: `${c.slug}-stay-3`, type: "stay", title: `${c.name} Heritage Inn`, description: `Colonial-era guesthouse with courtyards and library.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.2,
-      reviews: { count: 61, breakdown: { 5:30, 4:20, 3:7, 2:3, 1:1 } },
-      fields: { roomType: "Standard", priceFrom: 1800, amenities: ["Wi‑Fi","Breakfast"], checkIn: "2:00 PM", checkOut: "11:00 AM" },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "+91-90123-45678", website: "#" }, tags: ["Budget","Heritage"] },
-    { id: `${c.slug}-stay-4`, type: "stay", title: `${c.name} Eco Retreat`, description: `Sustainable cottages, organic meals, birding trails.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.8,
-      reviews: { count: 142, breakdown: { 5:110, 4:24, 3:6, 2:1, 1:1 } },
-      fields: { roomType: "Villa", priceFrom: 5200, amenities: ["Solar Hot Water","Local Guide","Parking"], checkIn: "12:30 PM", checkOut: "10:30 AM" },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "+91-90000-22222", website: "#" }, tags: ["Eco","Premium","Nature"] },
+    {
+      id: `${c.slug}-stay-1`,
+      type: "stay",
+      title: `${c.name} Riverside Lodge`,
+      description: "Cozy rooms by the river with balcony views and local cuisine.",
+      thumb,
+      gallery,
+      rating: 4.5,
+      reviews: { count: 128, breakdown: { 5: 85, 4: 30, 3: 10, 2: 2, 1: 1 } },
+      fields: { roomType: "Deluxe / Family", priceFrom: 2400, amenities: ["Wi-Fi", "Breakfast", "Parking"], checkIn: "1:00 PM", checkOut: "11:00 AM" },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "+91-98765-43210", website: "#" },
+      tags: ["Scenic", "Family", "Budget"],
+    },
+    {
+      id: `${c.slug}-stay-2`,
+      type: "stay",
+      title: `${c.name} Hilltop Homestay`,
+      description: "Wooden cottages amidst pine groves; great sunrise points.",
+      thumb,
+      gallery,
+      rating: 4.7,
+      reviews: { count: 96, breakdown: { 5: 70, 4: 20, 3: 5, 2: 1, 1: 0 } },
+      fields: { roomType: "Cottage", priceFrom: 3200, amenities: ["Bonfire", "Local Meals", "Guide"], checkIn: "12:00 PM", checkOut: "10:00 AM" },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "+91-99870-11223", website: "#" },
+      tags: ["Couples", "Sunrise", "Cottages"],
+    },
   ];
 
-  // --- Sightseeing (4) ---
+  // sightseeing
   const sightseeing = [
-    { id: `${c.slug}-see-1`, type: "sightseeing", title: `${c.name} Viewpoint`, description: `Panoramic valley views; best during golden hour.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.6,
-      reviews: { count: 210, breakdown: { 5:150, 4:40, 3:15, 2:3, 1:2 } },
+    {
+      id: `${c.slug}-see-1`,
+      type: "sightseeing",
+      title: `${c.name} Viewpoint`,
+      description: "Panoramic valley views; best during golden hour.",
+      thumb,
+      gallery,
+      rating: 4.6,
+      reviews: { count: 210, breakdown: { 5: 150, 4: 40, 3: 15, 2: 3, 1: 2 } },
       fields: { entryFee: 20, timings: "6:00 AM – 6:00 PM", bestTime: "Sunrise/Sunset", timeRequiredMins: 60 },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Sunset","Photography"] },
-    { id: `${c.slug}-see-2`, type: "sightseeing", title: `${c.name} Riverside Walk`, description: `Quiet stretch by the river with suspension bridge views.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.4,
-      reviews: { count: 144, breakdown: { 5:90, 4:35, 3:12, 2:5, 1:2 } },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "", website: "#" },
+      tags: ["Sunset", "Photography"],
+    },
+    {
+      id: `${c.slug}-see-2`,
+      type: "sightseeing",
+      title: `${c.name} Riverside Walk`,
+      description: "A quiet stretch along the river with suspension bridge views.",
+      thumb,
+      gallery,
+      rating: 4.4,
+      reviews: { count: 144, breakdown: { 5: 90, 4: 35, 3: 12, 2: 5, 1: 2 } },
       fields: { entryFee: 0, timings: "Open Area – Always", timeRequiredMins: 45 },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Bridge","Nature"] },
-    { id: `${c.slug}-see-3`, type: "sightseeing", title: `${c.name} Local Museum`, description: `Culture & crafts from the region; guided tours hourly.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.1,
-      reviews: { count: 88, breakdown: { 5:40, 4:28, 3:15, 2:3, 1:2 } },
-      fields: { entryFee: 50, timings: "10:00 AM – 5:00 PM", timeRequiredMins: 90 },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Culture","Museum"] },
-    { id: `${c.slug}-see-4`, type: "sightseeing", title: `${c.name} Botanical Park`, description: `Seasonal blooms, bamboo groves, lakeside paths.`, thumb: mkThumb(), gallery: mkGallery(), rating: 4.3,
-      reviews: { count: 133, breakdown: { 5:70, 4:40, 3:18, 2:3, 1:2 } },
-      fields: { entryFee: 30, timings: "8:00 AM – 6:00 PM", timeRequiredMins: 80 },
-      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` }, contact: { phone: "", website: "#" }, tags: ["Park","Family"] },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "", website: "#" },
+      tags: ["Bridge", "Nature"],
+    },
   ];
 
-  // --- Food (3) ---
-// --- Food (3) ---
-const food = [
-  {
-    id: `${c.slug}-food-1`,
-    type: "food",
-    title: `${c.name} Kitchen & Grill`,
-    description: `Local thalis, smoked meats, fresh greens. Vegetarian options available.`,
-    thumb: mkThumb(),
-    gallery: mkGallery(),
-    rating: 4.3,
-    reviews: { count: 78, breakdown: { 5: 42, 4: 22, 3: 10, 2: 3, 1: 1 } },
-    fields: { priceForTwo: 800, cuisine: ["Local", "North-Indian"], vegFriendly: true },
-    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
-    contact: { phone: "+91-90909-00000", website: "#" },
-    tags: ["Local", "Family"],
-  },
-  {
-    id: `${c.slug}-food-2`,
-    type: "food",
-    title: `${c.name} Tea Lounge`,
-    description: `Estate teas, light snacks, valley views.`,
-    thumb: mkThumb(),
-    gallery: mkGallery(),
-    rating: 4.5,
-    reviews: { count: 55, breakdown: { 5: 35, 4: 15, 3: 4, 2: 1, 1: 0 } },
-    fields: { priceForTwo: 500, cuisine: ["Cafe"], vegFriendly: true },
-    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
-    contact: { phone: "", website: "#" },
-    tags: ["Cafe", "Tea"],
-  },
-  {
-    id: `${c.slug}-food-3`,
-    type: "food",
-    title: `${c.name} Night Market`,
-    description: "Street snacks and local produce in the evening.",
-    thumb: mkThumb(),
-    gallery: mkGallery(),
-    rating: 4.0,
-    reviews: { count: 120, breakdown: { 5: 60, 4: 35, 3: 18, 2: 5, 1: 2 } },
-    fields: { priceForTwo: 400, cuisine: ["Street Food"], vegFriendly: true },
-    location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
-    contact: { phone: "", website: "#" },
-    tags: ["Street", "Budget"],
-  },
-];
-  // --- Transport (2) ---
+  // food (‼️ fixed quotes)
+  const food = [
+    {
+      id: `${c.slug}-food-1`,
+      type: "food",
+      title: `${c.name} Kitchen & Grill`,
+      description: "Local thalis, smoked meats, fresh greens. Vegetarian options available.",
+      thumb,
+      gallery,
+      rating: 4.3,
+      reviews: { count: 78, breakdown: { 5: 42, 4: 22, 3: 10, 2: 3, 1: 1 } },
+      fields: { priceForTwo: 800, cuisine: ["Local", "North-Indian"], vegFriendly: true },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "+91-90909-00000", website: "#" },
+      tags: ["Local", "Family"],
+    },
+    {
+      id: `${c.slug}-food-2`,
+      type: "food",
+      title: `${c.name} Tea Lounge`,
+      description: "Estate teas, light snacks, valley views.",
+      thumb,
+      gallery,
+      rating: 4.5,
+      reviews: { count: 55, breakdown: { 5: 35, 4: 15, 3: 4, 2: 1, 1: 0 } },
+      fields: { priceForTwo: 500, cuisine: ["Cafe"], vegFriendly: true },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "", website: "#" },
+      tags: ["Cafe", "Tea"],
+    },
+    {
+      id: `${c.slug}-food-3`,
+      type: "food",
+      title: `${c.name} Night Market`,
+      description: "Street snacks and local produce in the evening.",
+      thumb,
+      gallery,
+      rating: 4.0,
+      reviews: { count: 120, breakdown: { 5: 60, 4: 35, 3: 18, 2: 5, 1: 2 } },
+      fields: { priceForTwo: 400, cuisine: ["Street Food"], vegFriendly: true },
+      location: { mapsUrl: baseMaps, address: `${c.name}, ${c.state}` },
+      contact: { phone: "", website: "#" },
+      tags: ["Street", "Budget"],
+    },
+  ];
+
+  // transport
   const transport = [
-    { id: `${c.slug}-tx-1`, type: "transport", title: "Bus Stand", description: "Intercity and local buses.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.0,
-      reviews: { count: 40, breakdown: { 5:15, 4:12, 3:9, 2:3, 1:1 } },
-      fields: { timings: "5:00 AM – 9:00 PM", operators: ["ASTC","Private"], approxFare: 120 }, location: { mapsUrl: baseMaps, address: `${c.name} Bus Stand` }, tags: ["Transit"] },
-    { id: `${c.slug}-tx-2`, type: "transport", title: "Taxi Point", description: "Shared jeeps and taxis to nearby towns.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.2,
-      reviews: { count: 62, breakdown: { 5:30, 4:20, 3:9, 2:2, 1:1 } },
-      fields: { timings: "6:00 AM – 7:00 PM", approxFare: 350 }, location: { mapsUrl: baseMaps, address: `${c.name} Taxi Point` }, tags: ["Transit"] },
+    {
+      id: `${c.slug}-tx-1`,
+      type: "transport",
+      title: "Bus Stand",
+      description: "Intercity and local buses.",
+      thumb,
+      gallery,
+      rating: 4.0,
+      reviews: { count: 40, breakdown: { 5: 15, 4: 12, 3: 9, 2: 3, 1: 1 } },
+      fields: { timings: "5:00 AM – 9:00 PM", operators: ["ASTC", "Private"], approxFare: 120 },
+      location: { mapsUrl: baseMaps, address: `${c.name} Bus Stand` },
+      tags: ["Transit"],
+    },
+    {
+      id: `${c.slug}-tx-2`,
+      type: "transport",
+      title: "Taxi Point",
+      description: "Shared jeeps and taxis to nearby towns.",
+      thumb,
+      gallery,
+      rating: 4.2,
+      reviews: { count: 62, breakdown: { 5: 30, 4: 20, 3: 9, 2: 2, 1: 1 } },
+      fields: { timings: "6:00 AM – 7:00 PM", approxFare: 350 },
+      location: { mapsUrl: baseMaps, address: `${c.name} Taxi Point` },
+      tags: ["Transit"],
+    },
   ];
 
-  // --- Festivals (1) ---
+  // festivals
   const festivals = [
-    { id: `${c.slug}-fest-1`, type: "festival", title: `${c.name} Cultural Fest`, description: "Music, crafts, and food pop‑ups.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.6,
-      reviews: { count: 200, breakdown: { 5:140, 4:40, 3:15, 2:3, 1:2 } },
-      fields: { month: "Nov–Feb", ticket: 100 }, location: { mapsUrl: baseMaps, address: `${c.name}` }, tags: ["Seasonal","Culture"] },
+    {
+      id: `${c.slug}-fest-1`,
+      type: "festival",
+      title: `${c.name} Cultural Fest`,
+      description: "Music, crafts, and food pop-ups.",
+      thumb,
+      gallery,
+      rating: 4.6,
+      reviews: { count: 200, breakdown: { 5: 140, 4: 40, 3: 15, 2: 3, 1: 2 } },
+      fields: { month: "Nov–Feb", ticket: 100 },
+      location: { mapsUrl: baseMaps, address: `${c.name}` },
+      tags: ["Seasonal", "Culture"],
+    },
   ];
 
-  // --- Emergency & Pharmacy (2+1) ---
+  // emergency & pharmacy
   const emergency = [
     { id: `${c.slug}-emr-1`, type: "emergency", title: "Police Control Room", description: "24x7 – Dial 100 / 112", location: { mapsUrl: baseMaps, address: c.name } },
     { id: `${c.slug}-emr-2`, type: "emergency", title: "Nearest Hospital", description: "Emergency Ward & OPD", location: { mapsUrl: baseMaps, address: c.name } },
   ];
   const pharmacy = [
-    { id: `${c.slug}-med-1`, type: "pharmacy", title: "24x7 Pharmacy", description: "Emergency medicines and first‑aid.", thumb: mkThumb(), gallery: mkGallery(), rating: 4.1,
-      reviews: { count: 33, breakdown: { 5:15, 4:10, 3:6, 2:1, 1:1 } }, fields: { timings: "24 Hours" }, location: { mapsUrl: baseMaps, address: `${c.name}` }, tags: ["Medical"] },
+    {
+      id: `${c.slug}-med-1`,
+      type: "pharmacy",
+      title: "24x7 Pharmacy",
+      description: "Emergency medicines and first-aid.",
+      thumb,
+      gallery,
+      rating: 4.1,
+      reviews: { count: 33, breakdown: { 5: 15, 4: 10, 3: 6, 2: 1, 1: 1 } },
+      fields: { timings: "24 Hours" },
+      location: { mapsUrl: baseMaps, address: `${c.name}` },
+      tags: ["Medical"],
+    },
   ];
 
+  // packages
   const packages = [
-    { id: `${c.slug}-pkg-1`, title: `${c.name} Weekend Escape`, days: 2, nights: 1, price: 5499, includes: ["Stay","Breakfast","Local tour"], hero },
-    { id: `${c.slug}-pkg-2`, title: `${c.name} Heritage & Nature`, days: 4, nights: 3, price: 12999, includes: ["Stay","Guide","Transfers"], hero },
+    { id: `${c.slug}-pkg-1`, title: `${c.name} Weekend Escape`, days: 2, nights: 1, price: 5499, includes: ["Stay", "Breakfast", "Local tour"], hero: thumb },
+    { id: `${c.slug}-pkg-2`, title: `${c.name} Heritage & Nature`, days: 4, nights: 3, price: 12999, includes: ["Stay", "Guide", "Transfers"], hero: thumb },
   ];
 
-  return { ...c, hero, packages, categories: { stay: stays, sightseeing, food, transport, festivals, pharmacy, emergency, notes: [] } };
+  return {
+    ...c,
+    hero: thumb,
+    packages,
+    categories: { stay: stays, sightseeing, food, transport, festivals, pharmacy, emergency, notes: [] },
+  };
 }
 
 const CITIES = CITY_LIST.map(buildCityData);
 
-// ---------- App Shell ----------
+// ---------- app shell ----------
 export default function App() {
   return (
     <BrowserRouter>
@@ -220,7 +306,7 @@ function SiteNav() {
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30">NE</span>
-          <span className="font-semibold tracking-wide">North‑East India Travel</span>
+          <span className="font-semibold tracking-wide">North-East India Travel</span>
         </Link>
         <div className="hidden md:flex items-center gap-6 text-sm">
           <a href="#packages" className="hover:text-sky-300">Packages</a>
@@ -242,7 +328,7 @@ function SiteNav() {
   );
 }
 
-// ---------- Home ----------
+// ---------- home ----------
 function Home() {
   const banners = useMemo(() => CITIES.slice(0, 8).map(c => ({ src: c.hero, title: c.name, slug: c.slug })), []);
   return (
@@ -259,7 +345,10 @@ function Home() {
 
 function HeroCarousel({ slides }) {
   const [i, setI] = useState(0);
-  useEffect(() => { const t = setInterval(() => setI((p) => (p + 1) % slides.length), 5000); return () => clearInterval(t); }, [slides.length]);
+  useEffect(() => {
+    const t = setInterval(() => setI((p) => (p + 1) % slides.length), 5000);
+    return () => clearInterval(t);
+  }, [slides.length]);
   const slide = slides[i];
   return (
     <section className="relative">
@@ -270,15 +359,22 @@ function HeroCarousel({ slides }) {
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Plan your North‑East escape</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Plan your North-East escape</h1>
             <p className="mt-2 text-slate-300 max-w-2xl">Choose a city to explore curated stays, sights, food, and emergency info — built for clarity on the road.</p>
           </div>
-          <Link to={`/city/${slide.slug}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold">Explore {slide.title}</Link>
+          <Link to={`/city/${slide.slug}`} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold">
+            Explore {slide.title}
+          </Link>
         </div>
       </div>
       <div className="absolute right-4 bottom-4 flex gap-2">
         {slides.map((_, idx) => (
-          <button key={idx} aria-label={`Go to slide ${idx+1}`} onClick={() => setI(idx)} className={cls("h-2 w-6 rounded-full", idx===i?"bg-white":"bg-white/40 hover:bg-white/70")} />
+          <button
+            key={idx}
+            aria-label={`Go to slide ${idx + 1}`}
+            onClick={() => setI(idx)}
+            className={cls("h-2 w-6 rounded-full", idx === i ? "bg-white" : "bg-white/40 hover:bg-white/70")}
+          />
         ))}
       </div>
     </section>
@@ -286,14 +382,15 @@ function HeroCarousel({ slides }) {
 }
 
 function HomeIntro() {
+  const items = [
+    { t: "Curated & structured", d: "Each city packs stays, sights, food, and emergency info—cleanly organized with filters and tabs." },
+    { t: "Offline-friendly", d: "Key details are compact; map links open quickly when you’re online." },
+    { t: "Built for action", d: "Save places, open maps, copy links, share with friends—everything in one tap." },
+  ];
   return (
     <section className="py-10">
       <div className="grid md:grid-cols-3 gap-6">
-        {[
-          { t:"Curated & structured", d:"Each city packs stays, sights, food, and emergency info—cleanly organized with filters and tabs." },
-          { t:"Offline‑friendly", d:"Key details are compact; map links open quickly when you’re online." },
-          { t:"Built for action", d:"Save places, open maps, copy links, share with friends—everything in one tap." },
-        ].map((x, idx) => (
+        {items.map((x, idx) => (
           <div key={idx} className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-6">
             <h3 className="font-semibold text-lg">{x.t}</h3>
             <p className="mt-2 text-sm text-slate-300">{x.d}</p>
@@ -305,23 +402,27 @@ function HomeIntro() {
 }
 
 function PackagesSection() {
-  const top = useMemo(() => CITIES.slice(0,6).flatMap(c => c.packages.map(p => ({...p, city:c}))).slice(0,6), []);
+  const top = useMemo(() => CITIES.slice(0, 6).flatMap(c => c.packages.map(p => ({ ...p, city: c }))).slice(0, 6), []);
   return (
     <section id="packages" className="py-8">
       <div className="flex items-end justify-between">
         <h2 className="text-2xl font-bold">Featured Packages</h2>
-        <a href="#" className="text-sm text-sky-300 hover:underline">View all</a>
+        <a href="#" className="text-sm text-sky-300 hover:underline" onClick={(e)=>e.preventDefault()}>View all</a>
       </div>
       <div className="mt-6 grid md:grid-cols-3 gap-6">
         {top.map(pkg => (
           <article key={pkg.id} className="rounded-2xl overflow-hidden bg-white/5 ring-1 ring-white/10">
-            <div className="h-40 overflow-hidden"><SafeImage src={pkg.hero} alt="" className="w-full h-full object-cover"/></div>
+            <div className="h-40 overflow-hidden">
+              <SafeImage src={pkg.hero} alt="" className="w-full h-full object-cover" />
+            </div>
             <div className="p-5">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">{pkg.title}</h3>
                 <span className="text-sky-300 text-sm">{pkg.city.name}</span>
               </div>
-              <p className="mt-2 text-slate-300 text-sm">{pkg.days}D/{pkg.nights}N • Includes: {pkg.includes.join(", ")}</p>
+              <p className="mt-2 text-slate-300 text-sm">
+                {pkg.days}D/{pkg.nights}N • Includes: {pkg.includes.join(", ")}
+              </p>
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-lg font-bold">{fmtINR(pkg.price)}</span>
                 <Link to={`/city/${pkg.city.slug}`} className="px-3 py-2 rounded-lg bg-sky-500 text-slate-950 font-semibold">Explore</Link>
@@ -339,13 +440,15 @@ function BestPlaces() {
     <section id="best" className="py-10">
       <h2 className="text-2xl font-bold">Best Places to Start</h2>
       <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {CITIES.slice(0,9).map((c) => (
+        {CITIES.slice(0, 9).map((c) => (
           <Link to={`/city/${c.slug}`} key={c.slug} className="group rounded-2xl overflow-hidden bg-white/5 ring-1 ring-white/10 hover:ring-sky-400/40">
             <div className="h-44 overflow-hidden">
-              <SafeImage src={c.hero} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition"/>
+              <SafeImage src={c.hero} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition" />
             </div>
             <div className="p-5">
-              <h3 className="font-semibold">{c.name} <span className="text-slate-400 text-sm">({c.state})</span></h3>
+              <h3 className="font-semibold">
+                {c.name} <span className="text-slate-400 text-sm">({c.state})</span>
+              </h3>
               <p className="mt-1 text-sm text-slate-300">Curated stays, sights, food & tips.</p>
             </div>
           </Link>
@@ -355,7 +458,7 @@ function BestPlaces() {
   );
 }
 
-// ---------- City Page ----------
+// ---------- city page ----------
 function CityPage() {
   const { slug } = useParams();
   const city = CITIES.find(c => c.slug === slug);
@@ -364,13 +467,16 @@ function CityPage() {
   const [activeTab, setActiveTab] = useState("stay");
   const [sort, setSort] = useState("rating-desc");
 
-  useEffect(() => { window.scrollTo(0,0); }, [slug]);
-  if (!city) return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-      <p>City not found.</p>
-      <button className="mt-4 px-4 py-2 bg-white/10 rounded-lg" onClick={()=>navigate("/")}>Back</button>
-    </div>
-  );
+  useEffect(() => { window.scrollTo(0, 0); }, [slug]);
+
+  if (!city) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        <p>City not found.</p>
+        <button className="mt-4 px-4 py-2 bg-white/10 rounded-lg" onClick={() => navigate("/")}>Back</button>
+      </div>
+    );
+  }
 
   const tabs = [
     { key: "stay", label: "Stay" },
@@ -384,21 +490,26 @@ function CityPage() {
   ];
 
   const list = city.categories[activeTab] || [];
-  let filtered = list.filter(item => item.title.toLowerCase().includes(q.toLowerCase()))
-  if (sort === "rating-desc") filtered = [...filtered].sort((a,b)=> (b.rating||0)-(a.rating||0));
-  if (sort === "price-asc") filtered = [...filtered].sort((a,b)=> (a.fields?.priceFrom||a.fields?.priceForTwo||0) - (b.fields?.priceFrom||b.fields?.priceForTwo||0));
+  let filtered = list.filter(item => item.title.toLowerCase().includes(q.toLowerCase()));
+  if (sort === "rating-desc") filtered = [...filtered].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  if (sort === "price-asc")
+    filtered = [...filtered].sort(
+      (a, b) => (a.fields?.priceFrom || a.fields?.priceForTwo || 0) - (b.fields?.priceFrom || b.fields?.priceForTwo || 0)
+    );
 
   return (
     <main>
       <section className="relative">
         <div className="h-[38vh] w-full overflow-hidden">
-          <SafeImage src={city.hero} alt={city.name} className="h-full w-full object-cover"/>
+          <SafeImage src={city.hero} alt={city.name} className="h-full w-full object-cover" />
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold">{city.name} <span className="text-slate-300 text-lg font-normal">({city.state})</span></h1>
+              <h1 className="text-3xl font-extrabold">
+                {city.name} <span className="text-slate-300 text-lg font-normal">({city.state})</span>
+              </h1>
               <p className="text-slate-300 mt-1">Explore stays, sights, food & tips curated for travelers.</p>
             </div>
           </div>
@@ -410,12 +521,26 @@ function CityPage() {
           <div className="flex flex-wrap items-center justify-between py-3 gap-3">
             <div className="flex gap-2 overflow-x-auto">
               {tabs.map(t => (
-                <button key={t.key} onClick={() => setActiveTab(t.key)} className={cls("px-4 py-2 rounded-xl text-sm", activeTab===t.key?"bg-sky-500 text-slate-950 font-semibold":"bg-white/5 text-slate-200 hover:bg-white/10")}>{t.label}</button>
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={cls(
+                    "px-4 py-2 rounded-xl text-sm",
+                    activeTab === t.key ? "bg-sky-500 text-slate-950 font-semibold" : "bg-white/5 text-slate-200 hover:bg-white/10"
+                  )}
+                >
+                  {t.label}
+                </button>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search in this tab…" className="px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 placeholder:text-slate-400 text-sm focus:outline-none"/>
-              <select value={sort} onChange={e=>setSort(e.target.value)} className="px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-sm">
+              <input
+                value={q}
+                onChange={e => setQ(e.target.value)}
+                placeholder="Search in this tab…"
+                className="px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 placeholder:text-slate-400 text-sm focus:outline-none"
+              />
+              <select value={sort} onChange={e => setSort(e.target.value)} className="px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-sm">
                 <option value="rating-desc">Top rated</option>
                 <option value="price-asc">Price (low → high)</option>
               </select>
@@ -430,8 +555,8 @@ function CityPage() {
         ) : (
           <div className="grid md:grid-cols-2 gap-6">
             {filtered.map(item => (
-              <EntryCard key={item.id} city={city} item={item} />)
-            )}
+              <EntryCard key={item.id} city={city} item={item} />
+            ))}
           </div>
         )}
       </div>
@@ -444,6 +569,9 @@ function EmptyState({ activeTab }) {
     stay: "Add homestays, hotels, hostels with room types & price.",
     sightseeing: "Add viewpoints, lakes, parks with entry fee & timings.",
     food: "Add local eateries with price for two & cuisine.",
+    transport: "Add bus/taxi points with timings and fares.",
+    festivals: "Add seasonal events and months.",
+    pharmacy: "Add 24x7 stores and timings.",
     emergency: "Add police, hospitals, helplines.",
     notes: "Add offline tips, do’s & don’ts, seasonal advice.",
   }[activeTab];
@@ -455,24 +583,33 @@ function EmptyState({ activeTab }) {
   );
 }
 
-// ---------- Entry Card + Reviews + Gallery ----------
+// ---------- entry card ----------
 function EntryCard({ city, item }) {
   const [showGallery, setShowGallery] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   const [favs, setFavs] = useLocalStorage(storageKey, {});
   const key = `${city.slug}:${item.id}`;
   const saved = Boolean(favs && favs[key]);
-  const toggleSave = () => setFavs((prev) => ({ ...(prev||{}), [key]: saved ? undefined : { city: city.slug, id: item.id, title: item.title } }));
+
+  const toggleSave = () =>
+    setFavs((prev) => ({ ...(prev || {}), [key]: saved ? undefined : { city: city.slug, id: item.id, title: item.title } }));
 
   const share = async () => {
     const url = `${window.location.origin}/city/${city.slug}`;
     try {
-      if (navigator.share) { await navigator.share({ title: item.title, text: `Check this in ${city.name}`, url }); }
-      else { await navigator.clipboard.writeText(url); alert("Link copied!"); }
+      if (navigator.share) {
+        await navigator.share({ title: item.title, text: `Check this in ${city.name}`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        alert("Link copied!");
+      }
     } catch {}
   };
 
-  const openMaps = () => { const m = item.location?.mapsUrl; if (m) window.open(m, "_blank"); };
+  const openMaps = () => {
+    const m = item.location?.mapsUrl;
+    if (m) window.open(m, "_blank");
+  };
 
   return (
     <article className="rounded-2xl overflow-hidden bg-white/5 ring-1 ring-white/10">
@@ -484,34 +621,69 @@ function EntryCard({ city, item }) {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold">{item.title}</h3>
-              <p className="mt-1 text-sm text-slate-300" style={{display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden'}}>{item.description}</p>
+              <p
+                className="mt-1 text-sm text-slate-300"
+                style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
+              >
+                {item.description}
+              </p>
             </div>
             <div className="text-right min-w-[92px]">
               <StarRating value={item.rating} />
-              <button onClick={()=>setShowReviews((v)=>!v)} className="mt-1 text-xs text-sky-300 hover:underline">{showReviews?"Hide":"Reviews"}</button>
+              <button onClick={() => setShowReviews((v) => !v)} className="mt-1 text-xs text-sky-300 hover:underline">
+                {showReviews ? "Hide" : "Reviews"}
+              </button>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs">
-            {(item.tags||[]).map(t => <span key={t} className="px-2 py-1 rounded-lg bg-white/5 ring-1 ring-white/10">{t}</span>)}
+            {(item.tags || []).map((t) => (
+              <span key={t} className="px-2 py-1 rounded-lg bg-white/5 ring-1 ring-white/10">
+                {t}
+              </span>
+            ))}
           </div>
 
           <MetaFields item={item} />
 
           <div className="mt-1 flex flex-wrap gap-2">
-            <button onClick={()=>setShowGallery(true)} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">View gallery</button>
-            {item.location?.mapsUrl && <button onClick={openMaps} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">Open in Maps</button>}
-            <button onClick={share} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">Share / Copy link</button>
-            <button onClick={toggleSave} className={cls("px-3 py-2 rounded-lg text-sm ring-1", saved?"bg-sky-500 text-slate-950 ring-sky-400":"bg-white/10 hover:bg-white/15 ring-white/15")}>{saved?"Saved":"Save"}</button>
-            {item.contact?.phone && <a href={`tel:${item.contact.phone}`} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">Call</a>}
-            {item.contact?.website && item.contact.website !== "#" && <a target="_blank" rel="noreferrer" href={item.contact.website} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">Website</a>}
+            <button onClick={() => setShowGallery(true)} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">
+              View gallery
+            </button>
+            {item.location?.mapsUrl && (
+              <button onClick={openMaps} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">
+                Open in Maps
+              </button>
+            )}
+            <button onClick={share} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">
+              Share / Copy link
+            </button>
+            <button
+              onClick={toggleSave}
+              className={cls(
+                "px-3 py-2 rounded-lg text-sm ring-1",
+                saved ? "bg-sky-500 text-slate-950 ring-sky-400" : "bg-white/10 hover:bg-white/15 ring-white/15"
+              )}
+            >
+              {saved ? "Saved" : "Save"}
+            </button>
+            {item.contact?.phone && (
+              <a href={`tel:${item.contact.phone}`} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">
+                Call
+              </a>
+            )}
+            {item.contact?.website && item.contact.website !== "#" && (
+              <a target="_blank" rel="noreferrer" href={item.contact.website} className="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/15 ring-1 ring-white/15 text-sm">
+                Website
+              </a>
+            )}
           </div>
 
           {showReviews && <ReviewBlock reviews={item.reviews} />}
         </div>
       </div>
 
-      {showGallery && <GalleryModal images={item.gallery?.length?item.gallery:[item.thumb]} onClose={()=>setShowGallery(false)} />}
+      {showGallery && <GalleryModal images={item.gallery?.length ? item.gallery : [item.thumb]} onClose={() => setShowGallery(false)} />}
     </article>
   );
 }
@@ -522,8 +694,8 @@ function MetaFields({ item }) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <Field label="Room type" value={item.fields?.roomType} />
-        <Field label="Price from" value={item.fields?.priceFrom? fmtINR(item.fields.priceFrom):"—"} />
-        <Field label="Amenities" value={(item.fields?.amenities||[]).join(", ")||"—"} />
+        <Field label="Price from" value={item.fields?.priceFrom ? fmtINR(item.fields.priceFrom) : "—"} />
+        <Field label="Amenities" value={(item.fields?.amenities || []).join(", ") || "—"} />
       </div>
     );
   }
@@ -539,18 +711,9 @@ function MetaFields({ item }) {
   if (t === "food") {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-        <Field label="Price for two" value={item.fields?.priceForTwo? fmtINR(item.fields.priceForTwo):"—"} />
-        <Field label="Cuisine" value={(item.fields?.cuisine||[]).join(", ")||"—"} />
+        <Field label="Price for two" value={item.fields?.priceForTwo ? fmtINR(item.fields.priceForTwo) : "—"} />
+        <Field label="Cuisine" value={(item.fields?.cuisine || []).join(", ") || "—"} />
         <Field label="Address" value={item.location?.address || "—"} />
-      </div>
-    );
-  }
-  if (t === "emergency") {
-    return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-        <Field label="Details" value={item.description || "—"} />
-        <Field label="Address" value={item.location?.address || "—"} />
-        {item.location?.mapsUrl && <a target="_blank" rel="noreferrer" href={item.location.mapsUrl} className="mt-1 inline-flex text-sky-300 hover:underline text-sm">View on map →</a>}
       </div>
     );
   }
@@ -559,7 +722,7 @@ function MetaFields({ item }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <Field label="Timings" value={item.fields?.timings || "—"} />
         <Field label="Approx fare" value={item.fields?.approxFare ? fmtINR(item.fields.approxFare) : "—"} />
-        <Field label="Operators" value={(item.fields?.operators||[]).join(", ")||"—"} />
+        <Field label="Operators" value={(item.fields?.operators || []).join(", ") || "—"} />
       </div>
     );
   }
@@ -577,7 +740,24 @@ function MetaFields({ item }) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         <Field label="Timings" value={item.fields?.timings || "—"} />
         <Field label="Address" value={item.location?.address || "—"} />
-        {item.location?.mapsUrl && <a target="_blank" rel="noreferrer" href={item.location.mapsUrl} className="mt-1 inline-flex text-sky-300 hover:underline text-sm">View on map →</a>}
+        {item.location?.mapsUrl && (
+          <a target="_blank" rel="noreferrer" href={item.location.mapsUrl} className="mt-1 inline-flex text-sky-300 hover:underline text-sm">
+            View on map →
+          </a>
+        )}
+      </div>
+    );
+  }
+  if (t === "emergency") {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <Field label="Details" value={item.description || "—"} />
+        <Field label="Address" value={item.location?.address || "—"} />
+        {item.location?.mapsUrl && (
+          <a target="_blank" rel="noreferrer" href={item.location.mapsUrl} className="mt-1 inline-flex text-sky-300 hover:underline text-sm">
+            View on map →
+          </a>
+        )}
       </div>
     );
   }
@@ -594,13 +774,13 @@ function Field({ label, value }) {
 }
 
 function StarRating({ value = 0 }) {
-  const v = Math.max(0, Math.min(5, Number(value)||0));
+  const v = Math.max(0, Math.min(5, Number(value) || 0));
   const full = Math.floor(v);
   const half = v - full >= 0.5;
   return (
     <div className="inline-flex items-center gap-1" aria-label={`Rating ${v.toFixed(1)} out of 5`}>
       {[...Array(5)].map((_, i) => (
-        <svg key={i} viewBox="0 0 20 20" className={cls("h-4 w-4", i < full ? "fill-yellow-400" : i===full && half ? "fill-yellow-300" : "fill-slate-600")}>
+        <svg key={i} viewBox="0 0 20 20" className={cls("h-4 w-4", i < full ? "fill-yellow-400" : i === full && half ? "fill-yellow-300" : "fill-slate-600")}>
           <path d="M10 1.5l2.69 5.45 6.02.88-4.35 4.24 1.03 6.01L10 15.8l-5.39 2.83 1.03-6.01L1.29 7.83l6.02-.88L10 1.5z" />
         </svg>
       ))}
@@ -618,13 +798,13 @@ function ReviewBlock({ reviews }) {
       <div className="text-sm font-semibold">User reviews</div>
       <div className="text-xs text-slate-400">{total} reviews</div>
       <div className="mt-3 space-y-1">
-        {[5,4,3,2,1].map(n => (
+        {[5, 4, 3, 2, 1].map((n) => (
           <div key={n} className="flex items-center gap-3 text-sm">
             <span className="w-10 text-right">{n}★</span>
             <div className="h-2 flex-1 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-sky-400" style={{ width: `${((breakdown[n]||0)/maxCount)*100}%` }} />
+              <div className="h-full bg-sky-400" style={{ width: `${((breakdown[n] || 0) / maxCount) * 100}%` }} />
             </div>
-            <span className="w-10 text-slate-300 text-right">{breakdown[n]||0}</span>
+            <span className="w-10 text-slate-300 text-right">{breakdown[n] || 0}</span>
           </div>
         ))}
       </div>
@@ -634,9 +814,13 @@ function ReviewBlock({ reviews }) {
 
 function GalleryModal({ images = [], onClose }) {
   const [i, setI] = useState(0);
-  useEffect(() => { const onKey = (e) => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, [onClose]);
-  const next = () => setI(p => (p+1)%images.length);
-  const prev = () => setI(p => (p-1+images.length)%images.length);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  const next = () => setI((p) => (p + 1) % images.length);
+  const prev = () => setI((p) => (p - 1 + images.length) % images.length);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur flex items-center justify-center p-4">
